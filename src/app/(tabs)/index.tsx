@@ -13,7 +13,7 @@ import { formatGrams } from '@/constants/modelClasses';
 import { dayLongName, dayOfWeekFromDate, dayShortName } from '@/constants/weekdays';
 import { useCompartments, type Compartment } from '@/features/pillbox/compartments';
 import { formatCounts, formatPills } from '@/features/pillbox/format';
-import { chooseCompartmentToVerify, openCompartment } from '@/features/pillbox/navigation';
+import { chooseCompartmentToVerify, openCompartment, startVerifyAll } from '@/features/pillbox/navigation';
 import { WeekStrip } from '@/features/pillbox/WeekStrip';
 import { getDosesForDay, getNextDose, type ScheduledDose } from '@/features/schedule/schedule';
 import { BackendMissingCard } from '@/features/settings/BackendMissingCard';
@@ -68,6 +68,7 @@ export default function HomeScreen() {
         onPress={chooseCompartmentToVerify}
         fullWidth
       />
+      <Button label="Verify all days" variant="secondary" onPress={startVerifyAll} fullWidth />
       <BackendMissingCard />
 
       {medications.length === 0 ? (

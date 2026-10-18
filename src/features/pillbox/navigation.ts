@@ -15,6 +15,11 @@ export function chooseCompartmentToVerify() {
   router.push('/verify');
 }
 
+/** Checks Sunday through Saturday in one pass. */
+export function startVerifyAll() {
+  router.push('/verify/all');
+}
+
 /** Parses a `day` route param into a weekday, or null if invalid. */
 export function parseDayParam(value: string | string[] | undefined): DayOfWeek | null {
   const n = Number(Array.isArray(value) ? value[0] : value);

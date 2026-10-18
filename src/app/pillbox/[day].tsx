@@ -9,17 +9,16 @@ import { Screen } from '@/components/Screen';
 import { SectionHeader } from '@/components/SectionHeader';
 import { EmptyState, LoadingState } from '@/components/StateViews';
 import { StatusBadge } from '@/components/StatusBadge';
-import { formatGrams, gramsPerPill, modelClassLabel } from '@/constants/modelClasses';
 import { dayLongName } from '@/constants/weekdays';
 import { useCompartments } from '@/features/pillbox/compartments';
-import { formatPills } from '@/features/pillbox/format';
+import { ExpectedContentsCard } from '@/features/pillbox/ExpectedContentsCard';
 import { parseDayParam, startVerification } from '@/features/pillbox/navigation';
 import { ResultDetails } from '@/features/verification/ResultDetails';
 import { ResultRow } from '@/features/verification/ResultRow';
 import { useMedications } from '@/state/MedicationsContext';
 import { useVerifications } from '@/state/VerificationsContext';
 import { colors, spacing } from '@/theme';
-import { formatDateTime, formatTime } from '@/utils/time';
+import { formatDateTime } from '@/utils/time';
 
 export default function CompartmentDetailScreen() {
   const day = parseDayParam(useLocalSearchParams<{ day: string }>().day);
@@ -73,40 +72,7 @@ export default function CompartmentDetailScreen() {
       </Card>
 
       <SectionHeader title="Should contain" />
-      <Card>
-        {c.expected.items.length === 0 ? (
-          <AppText color={colors.textMuted}>
-            Nothing is scheduled for {name}. This compartment should be empty.
-          </AppText>
-        ) : (
-          <>
-            {c.expected.items.map((item) => {
-              const weight = gramsPerPill(item.modelClass);
-              return (
-                <View key={item.medicationId} style={styles.item}>
-                  <View style={styles.rowBetween}>
-                    <AppText variant="subheading" style={styles.flex}>
-                      {item.name}
-                    </AppText>
-                    <AppText variant="subheading">{formatPills(item.pills)}</AppText>
-                  </View>
-                  <AppText variant="caption" color={colors.textMuted}>
-                    {item.doseTimes.map(formatTime).join(', ')} · camera detects as{' '}
-                    {modelClassLabel(item.modelClass)}
-                    {weight !== undefined ? ` · ${formatGrams(item.pills * weight)}` : ''}
-                  </AppText>
-                </View>
-              );
-            })}
-            <View style={[styles.rowBetween, styles.total]}>
-              <AppText variant="label">Total</AppText>
-              <AppText variant="label">
-                {formatPills(c.expected.totalPills)} · {formatGrams(c.expected.weightGrams)}
-              </AppText>
-            </View>
-          </>
-        )}
-      </Card>
+      <ExpectedContentsCard expected={c.expected} dayName={name} />
 
       <Button label={`Verify ${name}`} onPress={() => startVerification(day)} fullWidth />
 
@@ -147,18 +113,5 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: spacing.sm,
     flexWrap: 'wrap',
-  },
-  flex: {
-    flex: 1,
-  },
-  item: {
-    gap: 2,
-    paddingVertical: spacing.xs,
-  },
-  total: {
-    marginTop: spacing.xs,
-    paddingTop: spacing.sm,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
   },
 });

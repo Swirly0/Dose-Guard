@@ -15,6 +15,7 @@ import { formatPills } from '@/features/pillbox/format';
 import { chooseCompartmentToVerify, openCompartment } from '@/features/pillbox/navigation';
 import { WeekStrip } from '@/features/pillbox/WeekStrip';
 import { getDosesForDay, getNextDose, type ScheduledDose } from '@/features/schedule/schedule';
+import { BackendMissingCard } from '@/features/settings/BackendMissingCard';
 import { ResultRow } from '@/features/verification/ResultRow';
 import { useMedications } from '@/state/MedicationsContext';
 import { useVerifications } from '@/state/VerificationsContext';
@@ -65,6 +66,7 @@ export default function HomeScreen() {
         onPress={chooseCompartmentToVerify}
         fullWidth
       />
+      <BackendMissingCard />
 
       {medications.length === 0 ? (
         <Card>

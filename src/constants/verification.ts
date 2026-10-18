@@ -5,12 +5,12 @@
 export const WEIGHT_TOLERANCE_GRAMS = 0.06;
 
 /**
- * Backend contract (not final; the backend URL is configured separately):
+ * Backend contract. The laptop URL is stored in Settings.
  *
- *   POST {backendUrl}/verify
- *   Content-Type: application/json
- *   Body:     VerificationRequest   (see @/types/verification)
- *   Response: VerificationResponse  (200) — detected counts, measured weight, status, summary
+ *   GET  {backendUrl}/status
+ *   POST {backendUrl}/verify      body: VerificationRequest
+ *   POST {backendUrl}/scale/tare  body optional: { dayOfWeek?: 1-7 }
+ *   POST {backendUrl}/leds        body: { dayOfWeek: 1-7 | null, mode, durationMs }
  *
  * The backend runs the camera and load-cell checks and decides the status. The app only
  * displays the result; it does not run its own competing verification.

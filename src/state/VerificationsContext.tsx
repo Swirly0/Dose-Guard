@@ -1,6 +1,5 @@
 import { createContext, useCallback, useContext, useMemo, type ReactNode } from 'react';
 
-import { createMockVerificationResults } from '@/data/mockVerificationResults';
 import { STORAGE_KEYS } from '@/services/storage';
 import { usePersistentState, type LoadStatus } from '@/state/usePersistentState';
 import type { VerificationResult } from '@/types/verification';
@@ -22,7 +21,7 @@ const newestFirst = (a: VerificationResult, b: VerificationResult) =>
 export function VerificationsProvider({ children }: { children: ReactNode }) {
   const [stored, setStored, status] = usePersistentState<VerificationResult[]>(
     STORAGE_KEYS.verifications,
-    () => createMockVerificationResults(),
+    () => [],
   );
 
   const results = useMemo(() => [...stored].sort(newestFirst), [stored]);

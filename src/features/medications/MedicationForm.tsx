@@ -9,7 +9,7 @@ import { Icon } from '@/components/Icon';
 import { Screen } from '@/components/Screen';
 import { TextField } from '@/components/TextField';
 import { TimePickerField } from '@/components/TimePickerField';
-import { MODEL_CLASSES } from '@/constants/modelClasses';
+import { formatGrams, MODEL_CLASSES } from '@/constants/modelClasses';
 import { ALL_DAYS, WEEKDAYS, type DayOfWeek } from '@/constants/weekdays';
 import { lookupBarcode } from '@/data/barcodeCatalog';
 import { BarcodeScannerModal } from '@/features/medications/BarcodeScannerModal';
@@ -43,6 +43,7 @@ export function MedicationForm({ initial, submitLabel, onSubmit, onDelete }: Pro
   const [scanOutcome, setScanOutcome] = useState<ScanOutcome | null>(null);
 
   const errors = submitted ? validateDraft(draft) : {};
+  const selectedClass = MODEL_CLASSES.find((c) => c.id === draft.modelClass);
   const update = (patch: Partial<MedicationDraft>) => setDraft((d) => ({ ...d, ...patch }));
 
   const handleScanned = (code: string) => {
@@ -125,7 +126,11 @@ export function MedicationForm({ initial, submitLabel, onSubmit, onDelete }: Pro
           </View>
           <FieldNote
             error={errors.modelClass}
-            hint="The medications the pillbox camera model is trained to recognize. Verification counts this medication in each compartment."
+            hint={
+              selectedClass
+                ? `One ${selectedClass.label} pill weighs ${formatGrams(selectedClass.gramsPerPill)}. Verification compares pill counts from the camera and total weight from the load cells.`
+                : 'The medications the pillbox camera model is trained to recognize.'
+            }
           />
         </View>
 

@@ -7,7 +7,7 @@ import { Card } from '@/components/Card';
 import { Icon } from '@/components/Icon';
 import { Screen } from '@/components/Screen';
 import { EmptyState, LoadingState } from '@/components/StateViews';
-import { modelClassLabel } from '@/constants/modelClasses';
+import { formatGrams, gramsPerPill, modelClassLabel } from '@/constants/modelClasses';
 import { formatDays } from '@/constants/weekdays';
 import { useMedications } from '@/state/MedicationsContext';
 import { colors, spacing } from '@/theme';
@@ -60,7 +60,10 @@ export default function MedicationsScreen() {
 }
 
 function MedicationCard({ medication: m }: { medication: Medication }) {
-  const pills = `${m.pillsPerDose} ${m.pillsPerDose === 1 ? 'pill' : 'pills'} per dose`;
+  const pillWeight = gramsPerPill(m.modelClass);
+  const pills = `${m.pillsPerDose} ${m.pillsPerDose === 1 ? 'pill' : 'pills'} per dose${
+    pillWeight === undefined ? '' : ` (${formatGrams(m.pillsPerDose * pillWeight)})`
+  }`;
 
   return (
     <Card

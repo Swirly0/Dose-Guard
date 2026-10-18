@@ -1,18 +1,10 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from 'react';
+import { createContext, useCallback, useContext, useMemo, type ReactNode } from 'react';
 
 import { mockMedications } from '@/data/mockMedications';
-import { loadJson, saveJson, STORAGE_KEYS } from '@/services/storage';
+import { STORAGE_KEYS } from '@/services/storage';
+import { usePersistentState, type LoadStatus } from '@/state/usePersistentState';
 import type { Medication, MedicationDraft } from '@/types/medication';
-
-type LoadStatus = 'loading' | 'ready' | 'error';
+import { createId } from '@/utils/id';
 
 type MedicationsContextValue = {
   medications: Medication[];
@@ -25,49 +17,39 @@ type MedicationsContextValue = {
 
 const MedicationsContext = createContext<MedicationsContextValue | null>(null);
 
-function createId(): string {
-  return `med-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-}
-
 export function MedicationsProvider({ children }: { children: ReactNode }) {
-  const [medications, setMedications] = useState<Medication[]>([]);
-  const [status, setStatus] = useState<LoadStatus>('loading');
-
-  useEffect(() => {
-    loadJson<Medication[]>(STORAGE_KEYS.medications)
-      .then((saved) => {
-        setMedications(saved ?? mockMedications);
-        setStatus('ready');
-      })
-      .catch(() => {
-        setMedications(mockMedications);
-        setStatus('error');
-      });
-  }, []);
-
-  useEffect(() => {
-    if (status === 'loading') return;
-    saveJson(STORAGE_KEYS.medications, medications).catch(() => setStatus('error'));
-  }, [medications, status]);
+  const [medications, setMedications, status] = usePersistentState<Medication[]>(
+    STORAGE_KEYS.medications,
+    () => mockMedications,
+  );
 
   const getMedication = useCallback(
     (id: string) => medications.find((m) => m.id === id),
     [medications],
   );
 
-  const addMedication = useCallback((draft: MedicationDraft) => {
-    const medication = { ...draft, id: createId() };
-    setMedications((prev) => [...prev, medication]);
-    return medication;
-  }, []);
+  const addMedication = useCallback(
+    (draft: MedicationDraft) => {
+      const medication = { ...draft, id: createId('med') };
+      setMedications((prev) => [...prev, medication]);
+      return medication;
+    },
+    [setMedications],
+  );
 
-  const updateMedication = useCallback((id: string, draft: MedicationDraft) => {
-    setMedications((prev) => prev.map((m) => (m.id === id ? { ...draft, id } : m)));
-  }, []);
+  const updateMedication = useCallback(
+    (id: string, draft: MedicationDraft) => {
+      setMedications((prev) => prev.map((m) => (m.id === id ? { ...draft, id } : m)));
+    },
+    [setMedications],
+  );
 
-  const deleteMedication = useCallback((id: string) => {
-    setMedications((prev) => prev.filter((m) => m.id !== id));
-  }, []);
+  const deleteMedication = useCallback(
+    (id: string) => {
+      setMedications((prev) => prev.filter((m) => m.id !== id));
+    },
+    [setMedications],
+  );
 
   const value = useMemo(
     () => ({ medications, status, getMedication, addMedication, updateMedication, deleteMedication }),

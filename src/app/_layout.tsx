@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
 import { MedicationsProvider } from '@/state/MedicationsContext';
+import { VerificationsProvider } from '@/state/VerificationsContext';
 import { colors } from '@/theme';
 
 export {
@@ -18,17 +19,19 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={DefaultTheme}>
       <MedicationsProvider>
-        <StatusBar style="dark" />
-        <Stack
-          screenOptions={{
-            contentStyle: { backgroundColor: colors.background },
-            headerBackButtonDisplayMode: 'minimal',
-          }}>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="medications/new" options={{ title: 'Add medication' }} />
-          <Stack.Screen name="medications/[id]" options={{ title: 'Edit medication' }} />
-          <Stack.Screen name="design-preview" options={{ title: 'Design preview' }} />
-        </Stack>
+        <VerificationsProvider>
+          <StatusBar style="dark" />
+          <Stack
+            screenOptions={{
+              contentStyle: { backgroundColor: colors.background },
+              headerBackButtonDisplayMode: 'minimal',
+            }}>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="medications/new" options={{ title: 'Add medication' }} />
+            <Stack.Screen name="medications/[id]" options={{ title: 'Edit medication' }} />
+            <Stack.Screen name="design-preview" options={{ title: 'Design preview' }} />
+          </Stack>
+        </VerificationsProvider>
       </MedicationsProvider>
     </ThemeProvider>
   );

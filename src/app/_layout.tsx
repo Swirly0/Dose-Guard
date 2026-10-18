@@ -2,6 +2,9 @@ import { DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
+import { MedicationsProvider } from '@/state/MedicationsContext';
+import { colors } from '@/theme';
+
 export {
   // Catch any errors thrown by the Layout component.
   ErrorBoundary,
@@ -14,11 +17,19 @@ export const unstable_settings = {
 export default function RootLayout() {
   return (
     <ThemeProvider value={DefaultTheme}>
-      <StatusBar style="dark" />
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="design-preview" options={{ title: 'Design preview' }} />
-      </Stack>
+      <MedicationsProvider>
+        <StatusBar style="dark" />
+        <Stack
+          screenOptions={{
+            contentStyle: { backgroundColor: colors.background },
+            headerBackButtonDisplayMode: 'minimal',
+          }}>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="medications/new" options={{ title: 'Add medication' }} />
+          <Stack.Screen name="medications/[id]" options={{ title: 'Edit medication' }} />
+          <Stack.Screen name="design-preview" options={{ title: 'Design preview' }} />
+        </Stack>
+      </MedicationsProvider>
     </ThemeProvider>
   );
 }

@@ -17,7 +17,8 @@ export function Screen({ children, scroll = true, edges = ['left', 'right'] }: P
       {scroll ? (
         <ScrollView
           contentContainerStyle={styles.content}
-          keyboardShouldPersistTaps="handled">
+          keyboardShouldPersistTaps="handled"
+          automaticallyAdjustKeyboardInsets>
           {children}
         </ScrollView>
       ) : (

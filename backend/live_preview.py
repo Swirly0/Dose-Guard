@@ -24,7 +24,7 @@ import cv2
 import requests
 
 from regions import assign_to_regions, draw_regions, load_regions
-from test_inference import draw_predictions, infer_bytes
+from test_inference import InferenceError, draw_predictions, infer_bytes
 
 OUTSIDE = 0
 
@@ -116,9 +116,11 @@ def main() -> None:
             regions = load_regions(frame.shape[1], frame.shape[0])
 
         _, jpg = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
-        predictions = infer_bytes(args.model, jpg.tobytes(), args.confidence, session, timeout=30).get(
-            "predictions", []
-        )
+        try:
+            result = infer_bytes(args.model, jpg.tobytes(), args.confidence, session, timeout=30)
+        except InferenceError as e:
+            sys.exit(str(e))
+        predictions = result.get("predictions", [])
 
         history.append(frame_counts(predictions, regions))
         stable = stable_counts(history)

@@ -24,10 +24,14 @@ load_dotenv(Path(__file__).with_name(".env"))
 SERVER_URL = os.environ.get("INFERENCE_SERVER_URL", "http://localhost:9001").rstrip("/")
 
 
+class InferenceError(RuntimeError):
+    pass
+
+
 def get_api_key() -> str:
     key = os.environ.get("ROBOFLOW_API_KEY")
     if not key:
-        sys.exit("ROBOFLOW_API_KEY is not set. Add it to backend/.env.")
+        raise InferenceError("ROBOFLOW_API_KEY is not set. Add it to backend/.env.")
     return key
 
 
@@ -46,7 +50,7 @@ def infer_bytes(
         timeout=timeout,
     )
     if not response.ok:
-        sys.exit(f"Server returned {response.status_code}: {response.text}")
+        raise InferenceError(f"Inference server returned {response.status_code}: {response.text}")
     return response.json()
 
 
@@ -89,7 +93,10 @@ def main() -> None:
     if not args.model:
         sys.exit("No model ID. Set ROBOFLOW_MODEL_ID in backend/.env or pass --model.")
 
-    result = infer(args.model, args.image_path, args.confidence)
+    try:
+        result = infer(args.model, args.image_path, args.confidence)
+    except InferenceError as e:
+        sys.exit(str(e))
     predictions = result.get("predictions", [])
 
     for p in predictions:

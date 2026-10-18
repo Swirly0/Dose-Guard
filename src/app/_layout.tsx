@@ -29,6 +29,9 @@ export default function RootLayout() {
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="medications/new" options={{ title: 'Add medication' }} />
             <Stack.Screen name="medications/[id]" options={{ title: 'Edit medication' }} />
+            <Stack.Screen name="pillbox/[day]" options={{ title: 'Compartment' }} />
+            <Stack.Screen name="verify/index" options={{ title: 'Verify a refill' }} />
+            <Stack.Screen name="verify/[day]" options={{ title: 'Verify' }} />
             <Stack.Screen name="design-preview" options={{ title: 'Design preview' }} />
           </Stack>
         </VerificationsProvider>

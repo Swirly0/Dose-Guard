@@ -15,7 +15,7 @@ export function createMockVerificationResults(now: Date = new Date()): Verificat
   return [
     {
       id: 'example-tue-pass',
-      dayOfWeek: 2,
+      dayOfWeek: 3,
       createdAt: ago(9 * DAY),
       status: 'verified',
       isDemo: true,
@@ -28,7 +28,7 @@ export function createMockVerificationResults(now: Date = new Date()): Verificat
     },
     {
       id: 'example-mon-pass',
-      dayOfWeek: 1,
+      dayOfWeek: 2,
       createdAt: ago(2 * DAY),
       status: 'verified',
       isDemo: true,
@@ -41,7 +41,7 @@ export function createMockVerificationResults(now: Date = new Date()): Verificat
     },
     {
       id: 'example-wed-mismatch',
-      dayOfWeek: 3,
+      dayOfWeek: 4,
       createdAt: ago(1 * DAY),
       status: 'mismatch',
       isDemo: true,
@@ -58,7 +58,7 @@ export function createMockVerificationResults(now: Date = new Date()): Verificat
     },
     {
       id: 'example-fri-review',
-      dayOfWeek: 5,
+      dayOfWeek: 6,
       createdAt: ago(3 * HOUR),
       status: 'needs_review',
       isDemo: true,

@@ -1,9 +1,9 @@
-"""Reads the seven compartment weights the Arduino streams over USB serial.
+"""Talks to the pillbox Arduino over USB serial: compartment weights and indicator LEDs.
 
 Protocol (see firmware/doseguard_scale/doseguard_scale.ino):
-    Arduino -> laptop:  "W g1 g2 g3 g4 g5 g6 g7"  grams, Monday = 1 ... Sunday = 7, "nan" = no reading
-                        "OK TARE", "PONG", "READY", "ERR ..."
-    Laptop -> Arduino:  "TARE", "TARE <1-7>", "PING"
+    Arduino -> laptop:  "W g1 g2 g3 g4 g5 g6 g7"  grams, Sunday = 1 ... Saturday = 7, "nan" = no reading
+                        "OK TARE", "OK LED", "PONG", "READY", "ERR ..."
+    Laptop -> Arduino:  "TARE", "TARE <1-7>", "PING", "LED <1-7|ALL> <ON|OFF|BLINK|FAST> [ms]"
 """
 
 import math
@@ -15,6 +15,7 @@ import serial
 from serial.tools import list_ports
 
 NUM_COMPARTMENTS = 7
+LED_MODES = {"ON", "OFF", "BLINK", "FAST"}
 # USB vendor IDs: Arduino LLC, Arduino SRL, and the CH340 chip used by many Mega clones.
 ARDUINO_VIDS = {0x2341, 0x2A03, 0x1A86}
 
@@ -53,6 +54,14 @@ class ScaleReader:
         self._tare_done.clear()
         self._send("TARE" if day is None else f"TARE {day}")
         return self._tare_done.wait(timeout)
+
+    def set_led(self, day: int | None, mode: str, duration_ms: int = 0) -> None:
+        """Sets one compartment's LED (or all when `day` is None). A non-zero `duration_ms`
+        turns it off again after that long."""
+        if mode not in LED_MODES:
+            raise ValueError(f"LED mode must be one of {sorted(LED_MODES)}")
+        target = "ALL" if day is None else str(day)
+        self._send(f"LED {target} {mode}" + (f" {duration_ms}" if duration_ms else ""))
 
     def stable_weight(
         self, day: int, samples: int = 5, max_spread: float = 0.05, timeout: float = 8.0

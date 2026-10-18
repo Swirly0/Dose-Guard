@@ -17,7 +17,7 @@ import numpy as np
 
 from regions import REGIONS_PATH
 
-DAYS = [(7, "Sun"), (1, "Mon"), (2, "Tue"), (3, "Wed"), (4, "Thu"), (5, "Fri"), (6, "Sat")]
+DAYS = [(1, "Sun"), (2, "Mon"), (3, "Tue"), (4, "Wed"), (5, "Thu"), (6, "Fri"), (7, "Sat")]
 CANNY_THRESHOLDS = [(30, 90), (20, 60), (15, 45), (10, 30)]
 
 
@@ -92,7 +92,7 @@ def main() -> None:
     REGIONS_PATH.write_text(json.dumps({
         "frame": {"width": w_img, "height": h_img},
         "camera": args.camera,
-        "weekdayConvention": "Monday = 1 through Sunday = 7",
+        "weekdayConvention": "Sunday = 1 through Saturday = 7",
         "regions": [
             {"dayOfWeek": day, "label": label, "x": x, "y": y, "width": w, "height": h}
             for (x, y, w, h), (day, label) in zip(openings, DAYS)

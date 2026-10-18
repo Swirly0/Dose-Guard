@@ -6,8 +6,13 @@ Usage:
 Endpoints:
     GET  /status      camera, scale, and model status
     POST /verify      verify one compartment (body: VerificationRequest, see below)
-    GET  /scale       latest weight per compartment, Monday = 1 ... Sunday = 7
+    GET  /scale       latest weight per compartment, Sunday = 1 ... Saturday = 7
     POST /scale/tare  zero the scale (body optional: {"dayOfWeek": 1-7})
+    POST /leds        set an indicator LED (body: {"dayOfWeek": 1-7 or null for all,
+                      "mode": "ON" | "OFF" | "BLINK" | "FAST", "durationMs": 0})
+
+During /verify the compartment's LED blinks; afterwards it stays on for 5 s if checks passed,
+or blinks fast for 10 s on a mismatch or needs-review result.
 
 The phone must be on the same network as this laptop. Use the "App backend URL" printed at
 start-up in the app, and allow the port through Windows Firewall if the phone can't connect.
@@ -80,7 +85,7 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], all
 
 
 class VerificationRequest(BaseModel):
-    dayOfWeek: int = Field(ge=1, le=7, description="Monday = 1 ... Sunday = 7")
+    dayOfWeek: int = Field(ge=1, le=7, description="Sunday = 1 ... Saturday = 7")
     expectedCounts: dict[str, int]
     expectedWeightGrams: float = Field(ge=0)
     weightToleranceGrams: float = Field(gt=0)
@@ -104,6 +109,21 @@ class TareRequest(BaseModel):
     dayOfWeek: int | None = Field(default=None, ge=1, le=7)
 
 
+class LedRequest(BaseModel):
+    dayOfWeek: int | None = Field(default=None, ge=1, le=7, description="null = all compartments")
+    mode: Literal["ON", "OFF", "BLINK", "FAST"]
+    durationMs: int = Field(default=0, ge=0, le=600_000, description="0 = until changed")
+
+
+def try_set_led(day: int | None, mode: str, duration_ms: int = 0) -> None:
+    """LED feedback is best-effort; a missing Arduino must not fail a verification."""
+    if scale and scale.connected:
+        try:
+            scale.set_led(day, mode, duration_ms)
+        except (RuntimeError, OSError):
+            pass
+
+
 def run_camera_check(day: int) -> tuple[dict[str, int] | None, int, str | None]:
     if not MODEL_ID:
         return None, 0, "ROBOFLOW_MODEL_ID is not set in backend/.env."
@@ -125,6 +145,7 @@ def verify(request: VerificationRequest) -> VerificationResponse:
     if not verify_lock.acquire(blocking=False):
         raise HTTPException(status_code=409, detail="Another verification is already running.")
     try:
+        try_set_led(request.dayOfWeek, "BLINK")
         with ThreadPoolExecutor(max_workers=2) as pool:
             camera_job = pool.submit(run_camera_check, request.dayOfWeek)
             weight_job = pool.submit(run_weight_check, request.dayOfWeek)
@@ -143,6 +164,11 @@ def verify(request: VerificationRequest) -> VerificationResponse:
         measured_weight=measured,
         scale_error=scale_error,
     )
+    if outcome["status"] == "verified":
+        try_set_led(request.dayOfWeek, "ON", 5000)
+    else:
+        try_set_led(request.dayOfWeek, "FAST", 10000)
+
     return VerificationResponse(
         id=f"ver-{uuid.uuid4().hex[:12]}",
         dayOfWeek=request.dayOfWeek,
@@ -186,6 +212,14 @@ def tare(request: TareRequest | None = None) -> dict:
     if not scale.tare(day):
         raise HTTPException(status_code=504, detail="The Arduino did not confirm the tare.")
     return {"ok": True, "dayOfWeek": day}
+
+
+@app.post("/leds")
+def set_leds(request: LedRequest) -> dict:
+    if not scale or not scale.connected:
+        raise HTTPException(status_code=503, detail=(scale and scale.error) or "Arduino is not connected.")
+    scale.set_led(request.dayOfWeek, request.mode, request.durationMs)
+    return {"ok": True}
 
 
 def lan_ip() -> str:

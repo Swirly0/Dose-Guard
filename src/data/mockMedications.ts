@@ -17,7 +17,7 @@ export const mockMedications: Medication[] = [
     name: 'Vitamin B12',
     modelClass: 'B12',
     pillsPerDose: 1,
-    daysOfWeek: [1, 3, 5],
+    daysOfWeek: [2, 4, 6],
     doseTimes: ['08:00', '20:00'],
     remindersEnabled: false,
   },

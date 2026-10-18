@@ -13,7 +13,7 @@ type Props = {
   today: DayOfWeek;
 };
 
-/** Compact Monday–Sunday status row. Each tile opens that compartment. */
+/** Compact Sunday–Saturday status row. Each tile opens that compartment. */
 export function WeekStrip({ compartments, today }: Props) {
   return (
     <View style={styles.row}>

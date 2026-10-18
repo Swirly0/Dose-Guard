@@ -18,7 +18,7 @@ function sameCounts(a: PillCounts, b: PillCounts): boolean {
 }
 
 /**
- * Builds Monday–Sunday compartments from the schedule and the latest result per day.
+ * Builds Sunday–Saturday compartments from the schedule and the latest result per day.
  * `results` must be sorted newest first.
  */
 export function buildCompartments(

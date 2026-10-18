@@ -1,0 +1,14 @@
+# secrets
+.env
+
+# python
+.venv/
+__pycache__/
+*.pyc
+
+# model outputs
+runs/
+*.pt
+out.jpg
+frame_*.jpg
+calibration_debug.jpg

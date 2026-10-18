@@ -1,0 +1,14 @@
+{
+  "frame": { "width": 1920, "height": 1080 },
+  "camera": 1,
+  "weekdayConvention": "Monday = 1 through Sunday = 7",
+  "regions": [
+    { "dayOfWeek": 7, "label": "Sun", "x": 238,  "y": 295, "width": 179, "height": 215 },
+    { "dayOfWeek": 1, "label": "Mon", "x": 457,  "y": 295, "width": 172, "height": 213 },
+    { "dayOfWeek": 2, "label": "Tue", "x": 675,  "y": 295, "width": 167, "height": 213 },
+    { "dayOfWeek": 3, "label": "Wed", "x": 894,  "y": 296, "width": 161, "height": 211 },
+    { "dayOfWeek": 4, "label": "Thu", "x": 1103, "y": 295, "width": 168, "height": 212 },
+    { "dayOfWeek": 5, "label": "Fri", "x": 1315, "y": 295, "width": 170, "height": 213 },
+    { "dayOfWeek": 6, "label": "Sat", "x": 1525, "y": 295, "width": 175, "height": 213 }
+  ]
+}

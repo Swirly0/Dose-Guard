@@ -97,12 +97,7 @@ void loop() {
     // get_units() returns grams after set_scale() and tare().
     float measuredWeight_g = scales[i].get_units(READINGS_TO_AVERAGE);
 
-    // Keep the LED on until the measured weight reaches the target,
-    // allowing for the configured tolerance.
-    bool targetReached =
-        measuredWeight_g >= (weightLimit_g[i] - WEIGHT_TOLERANCE_G);
-
-    digitalWrite(LED_PINS[i], targetReached ? LOW : HIGH);
+    digitalWrite(LED_PINS[i], HIGH);
 
     Serial.print(DAY_NAMES[i]);
     Serial.print(",");
@@ -110,7 +105,7 @@ void loop() {
     Serial.print(",");
     Serial.print(weightLimit_g[i], 2);
     Serial.print(",");
-    Serial.println(targetReached ? "OFF" : "ON");
+    Serial.println("ON");
   }
 
   Serial.println();

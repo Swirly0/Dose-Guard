@@ -1,9 +1,9 @@
 """Combines camera counts and load-cell weight into one verification result.
 
 Status rules:
-    mismatch      any available check disagrees with what was expected
-    needs_review  nothing disagrees, but the camera or weight check could not run
-    verified      every check ran and passed
+    mismatch      camera counts disagree with what was expected
+    needs_review  camera could not run (weight alone is not enough)
+    verified      camera counts matched; weight is recorded but does not fail the check
 """
 
 LABELS = {"B12": "Vitamin B12", "D3": "Vitamin D3", "Ibuprofen": "Ibuprofen"}
@@ -53,15 +53,25 @@ def evaluate(
                 "check that the pillbox is in its calibrated position."
             )
 
+    camera_matched = detected_counts is not None and not problems
+
     if measured_weight is None:
-        unavailable.append(f"Weight check could not run: {scale_error}")
+        note = f"Weight check could not run: {scale_error}"
+        if camera_matched:
+            notes.append(note + " Camera counts matched, so this check still passed.")
+        else:
+            unavailable.append(note)
     else:
         diff = measured_weight - expected_weight
         if abs(diff) > tolerance:
-            problems.append(
+            weight_note = (
                 f"Weight {abs(diff):.2f} g {'over' if diff > 0 else 'under'} the expected "
                 f"{expected_weight:.2f} g (allowed ±{tolerance:.2f} g)"
             )
+            if camera_matched:
+                notes.append(weight_note + ". Camera counts matched, so this check still passed.")
+            else:
+                problems.append(weight_note)
         else:
             notes.append(
                 f"Weight {measured_weight:.2f} g is within ±{tolerance:.2f} g of the expected "

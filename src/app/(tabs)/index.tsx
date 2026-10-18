@@ -9,9 +9,10 @@ import { Screen } from '@/components/Screen';
 import { SectionHeader } from '@/components/SectionHeader';
 import { EmptyState, LoadingState } from '@/components/StateViews';
 import { StatusBadge } from '@/components/StatusBadge';
-import { dayLongName, dayOfWeekFromDate } from '@/constants/weekdays';
+import { formatGrams } from '@/constants/modelClasses';
+import { dayLongName, dayOfWeekFromDate, dayShortName } from '@/constants/weekdays';
 import { useCompartments, type Compartment } from '@/features/pillbox/compartments';
-import { formatPills } from '@/features/pillbox/format';
+import { formatCounts, formatPills } from '@/features/pillbox/format';
 import { chooseCompartmentToVerify, openCompartment } from '@/features/pillbox/navigation';
 import { WeekStrip } from '@/features/pillbox/WeekStrip';
 import { getDosesForDay, getNextDose, type ScheduledDose } from '@/features/schedule/schedule';
@@ -49,6 +50,7 @@ export default function HomeScreen() {
   const now = new Date();
   const today = dayOfWeekFromDate(now);
   const todaysDoses = getDosesForDay(medications, today);
+  const todayExpected = compartments[today - 1]?.expected;
   const nextDose = getNextDose(medications, now);
   const attention = compartments.filter(needsAttention);
   const recent = results.slice(0, 3);
@@ -93,6 +95,13 @@ export default function HomeScreen() {
 
           <SectionHeader title="Today's schedule" />
           <Card>
+            {todayExpected && (
+              <AppText color={colors.textMuted}>
+                {todayExpected.totalPills === 0
+                  ? "Today's compartment should be empty."
+                  : `${formatCounts(todayExpected.counts)} · ${formatPills(todayExpected.totalPills)} · ${formatGrams(todayExpected.weightGrams)}`}
+              </AppText>
+            )}
             {todaysDoses.length === 0 ? (
               <AppText color={colors.textMuted}>No doses scheduled today.</AppText>
             ) : (
@@ -117,6 +126,30 @@ export default function HomeScreen() {
 
       <SectionHeader title="This week" actionLabel="Pillbox" onActionPress={() => router.push('/pillbox')} />
       <WeekStrip compartments={compartments} today={today} />
+      <Card>
+        {compartments.map((c) => (
+          <View key={c.dayOfWeek} style={styles.weekRow}>
+            <AppText variant="label" style={styles.weekDay}>
+              {dayShortName(c.dayOfWeek)}
+            </AppText>
+            <View style={styles.flex}>
+              <AppText color={c.expected.totalPills === 0 ? colors.textSubtle : colors.text}>
+                {c.expected.totalPills === 0 ? 'Empty' : formatCounts(c.expected.counts)}
+              </AppText>
+              {c.expected.totalPills > 0 && (
+                <AppText variant="caption" color={colors.textSubtle}>
+                  {formatPills(c.expected.totalPills)} · {formatGrams(c.expected.weightGrams)}
+                </AppText>
+              )}
+              {c.isOutdated && (
+                <AppText variant="caption" color={colors.warning}>
+                  Schedule changed. Verify again.
+                </AppText>
+              )}
+            </View>
+          </View>
+        ))}
+      </Card>
 
       <SectionHeader title="Needs attention" />
       {attention.length === 0 ? (
@@ -143,7 +176,7 @@ export default function HomeScreen() {
             </View>
             <AppText color={colors.textMuted}>
               {c.isOutdated
-                ? 'Schedule changed since the last check. Verify again.'
+                ? `Schedule changed. Now ${c.expected.totalPills === 0 ? 'empty' : formatCounts(c.expected.counts)}. Verify again.`
                 : c.latestResult?.summary}
             </AppText>
           </Card>
@@ -197,5 +230,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
+  },
+  weekRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  weekDay: {
+    width: 36,
+    paddingTop: 2,
   },
 });

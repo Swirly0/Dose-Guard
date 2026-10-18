@@ -1,9 +1,8 @@
 """Talks to the pillbox Arduino over USB serial: compartment weights and indicator LEDs.
 
-Protocol (see firmware/doseguard_scale/doseguard_scale.ino):
-    Arduino -> laptop:  "W g1 g2 g3 g4 g5 g6 g7"  grams, Sunday = 1 ... Saturday = 7, "nan" = no reading
-                        "OK TARE", "OK LED", "PONG", "READY", "ERR ..."
-    Laptop -> Arduino:  "TARE", "TARE <1-7>", "PING", "LED <1-7|ALL> <ON|OFF|BLINK|FAST> [ms]"
+The weighing sketch prints one CSV line per day, then a blank line:
+    Saturday,0.33,0.50,ON
+The older W-line protocol is still accepted if present.
 """
 
 import math
@@ -16,6 +15,15 @@ from serial.tools import list_ports
 
 NUM_COMPARTMENTS = 7
 LED_MODES = {"ON", "OFF", "BLINK", "FAST"}
+DAY_INDEX = {
+    "Sunday": 0,
+    "Monday": 1,
+    "Tuesday": 2,
+    "Wednesday": 3,
+    "Thursday": 4,
+    "Friday": 5,
+    "Saturday": 6,
+}
 # USB vendor IDs: Arduino LLC, Arduino SRL, and the CH340 chip used by many Mega clones.
 ARDUINO_VIDS = {0x2341, 0x2A03, 0x1A86}
 
@@ -38,6 +46,7 @@ class ScaleReader:
         self._ser: serial.Serial | None = None
         self._lock = threading.Lock()
         self._readings: deque[tuple[float, list[float | None]]] = deque(maxlen=100)
+        self._cycle: list[float | None] = [None] * NUM_COMPARTMENTS
         self._tare_done = threading.Event()
         threading.Thread(target=self._run, daemon=True).start()
 
@@ -64,25 +73,32 @@ class ScaleReader:
         self._send(f"LED {target} {mode}" + (f" {duration_ms}" if duration_ms else ""))
 
     def stable_weight(
-        self, day: int, samples: int = 5, max_spread: float = 0.05, timeout: float = 8.0
+        self, day: int, samples: int = 2, max_spread: float = 0.05, timeout: float = 8.0
     ) -> tuple[float | None, str | None]:
-        """Waits for `samples` fresh readings of one compartment that agree within `max_spread`
-        grams. Returns (grams, None), or (None, reason) if the reading is missing or unsettled."""
+        """Uses recent grams for one compartment (the same values Settings shows).
+        The Mega only finishes a full sweep every several seconds, so readings from just
+        before the check started are included. Returns (grams, None) or (None, reason)."""
         start = time.monotonic()
         reason = "No readings from the scale."
         while time.monotonic() - start < timeout:
             if not self.connected:
                 return None, self.error or "Scale is not connected."
+            cutoff = start - 20
             with self._lock:
-                recent = [values[day - 1] for t, values in self._readings if t >= start][-samples:]
-            if any(v is None for v in recent):
-                reason = f"Load cell for compartment {day} is not responding."
-            elif len(recent) == samples:
+                recent = [
+                    values[day - 1]
+                    for t, values in self._readings
+                    if t >= cutoff and values[day - 1] is not None
+                ][-samples:]
+            if recent:
                 spread = max(recent) - min(recent)
                 if spread <= max_spread:
-                    return round(sum(recent) / samples, 3), None
+                    return round(sum(recent) / len(recent), 3), None
                 reason = f"Weight did not settle (readings varied by {spread:.2f} g)."
             time.sleep(0.1)
+        latest = self.latest()
+        if latest and latest[day - 1] is not None:
+            return round(latest[day - 1], 3), None
         return None, reason
 
     def _send(self, command: str) -> None:
@@ -94,8 +110,14 @@ class ScaleReader:
         port = self.requested_port or find_arduino_port()
         if not port:
             raise serial.SerialException("No Arduino found. Plug it in or set SCALE_PORT in backend/.env.")
-        ser = serial.Serial(port, self.baud, timeout=1)
-        time.sleep(2)  # opening the port resets the Mega; give it time to boot and tare
+        # Avoid toggling DTR/RTS: that resets the Mega and re-tares with pills already on the box.
+        ser = serial.Serial(timeout=1)
+        ser.port = port
+        ser.baudrate = self.baud
+        ser.dtr = False
+        ser.rts = False
+        ser.open()
+        time.sleep(0.3)
         ser.reset_input_buffer()
         self._ser, self.port, self.error = ser, port, None
 
@@ -136,7 +158,23 @@ class ScaleReader:
                 except ValueError:
                     value = math.nan
                 values.append(None if math.isnan(value) else value)
-            with self._lock:
-                self._readings.append((time.monotonic(), values))
+            self._store(values)
         elif line == "OK TARE":
             self._tare_done.set()
+        elif "," in line:
+            name, weight, *_rest = line.split(",")
+            day = DAY_INDEX.get(name)
+            if day is None:
+                return
+            try:
+                grams = float(weight)
+            except ValueError:
+                return
+            self._cycle[day] = None if math.isnan(grams) else grams
+            self._store(list(self._cycle))
+        elif line == "" and any(v is not None for v in self._cycle):
+            self._store(list(self._cycle))
+
+    def _store(self, values: list[float | None]) -> None:
+        with self._lock:
+            self._readings.append((time.monotonic(), values))

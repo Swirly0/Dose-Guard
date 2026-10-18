@@ -43,8 +43,8 @@ export function ResultDetails({ result }: { result: VerificationResult }) {
 
       {result.status === 'verified' && (
         <AppText variant="caption" color={colors.textSubtle}>
-          Passing means the configured count and weight checks matched. It does not guarantee
-          medication safety.
+          Passing means the camera counts matched the schedule. Weight is shown for reference
+          and does not fail the check. It does not guarantee medication safety.
         </AppText>
       )}
     </View>

@@ -1,6 +1,8 @@
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import { Tabs } from 'expo-router';
 
+import { colors } from '@/theme';
+
 type TabIconName = SymbolViewProps['name'];
 
 const TABS: { name: string; title: string; icon: TabIconName }[] = [
@@ -35,8 +37,9 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#2563EB',
-        tabBarInactiveTintColor: '#6B7280',
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textSubtle,
+        sceneStyle: { backgroundColor: colors.background },
       }}>
       {TABS.map((tab) => (
         <Tabs.Screen
